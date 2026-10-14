@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Tetro Blocks</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    body {
+      background: #090d16;
+      color: #f8fafc;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    .hud {
+      display: flex;
+      justify-content: space-between;
+      width: 240px;
+      margin-bottom: 12px;
+      font-family: monospace;
+      font-size: 15px;
+    }
+    .hud span { color: #a855f7; font-weight: bold; }
+    canvas {
+      background: #050811;
+      border: 2px solid #1e293b;
+      border-radius: 8px;
+    }
+    .hint {
+      margin-top: 12px;
+      font-size: 13px;
+      color: #64748b;
+    }
+  </style>
+</head>
+<body>
+  <div class="hud">
+    <div>SCORE: <span id="score">0</span></div>
+    <div>LINES: <span id="lines">0</span></div>
+  </div>
+  <canvas id="c" width="240" height="480"></canvas>
+  <div class="hint">Arrows: Move & Rotate · Space: Hard Drop</div>
+
+  <script>
+    const canvas = document.getElementById('c');
+    const ctx = canvas.getContext('2d');
+    const scoreEl = document.getElementById('score');
+    const linesEl = document.getElementById('lines');
+
+    const COLS = 10;
+    const ROWS = 20;
+    const BLOCK = canvas.width / COLS;
+
+    const PIECES = [
+      { s: [[1,1,1,1]], c: '#06b6d4' },
+      { s: [[1,1],[1,1]], c: '#eab308' },
+      { s: [[0,1,0],[1,1,1]], c: '#a855f7' },
+      { s: [[1,0,0],[1,1,1]], c: '#3b82f6' },
+      { s: [[0,0,1],[1,1,1]], c: '#f97316' },
+      { s: [[0,1,1],[1,1,0]], c: '#22c55e' },
+      { s: [[1,1,0],[0,1,1]], c: '#ef4444' }
+    ];
+
+    let grid = Array(ROWS).fill(null).map(() => Array(COLS).fill(null));
+    let piece = null;
+    let score = 0;
+    let lines = 0;
+
+    function spawn() {
+      let p = PIECES[Math.floor(Math.random() * PIECES.length)];
+      piece = {
+        s: p.s,
+        c: p.c,
+        x: Math.floor((COLS - p.s[0].length) / 2),
+        y: 0
+      };
+      if (collide(piece.s, piece.x, piece.y)) {
+        grid = Array(ROWS).fill(null).map(() => Array(COLS).fill(null));
+        score = 0;
+        lines = 0;
+        scoreEl.innerText = score;
+        linesEl.innerText = lines;
+      }
+    }
+
+    function collide(s, x, y) {
+      for (let r = 0; r < s.length; r++) {
+        for (let c = 0; c < s[r].length; c++) {
+          if (s[r][c]) {
+            let nx = x + c;
+            let ny = y + r;
+            if (nx < 0 || nx >= COLS || ny >= ROWS) return true;
+            if (ny >= 0 && grid[ny][nx]) return true;
+          }
+        }
+      }
+      return false;
+    }
+
+    function rotate(s) {
+      return s[0].map((_, i) => s.map(row => row[i]).reverse());
+    }
+
+    function drop() {
+      if (!collide(piece.s, piece.x, piece.y + 1)) {
+        piece.y++;
+      } else {
+        // Lock
+        for (let r = 0; r < piece.s.length; r++) {
+          for (let c = 0; c < piece.s[r].length; c++) {
+            if (piece.s[r][c] && piece.y + r >= 0) {
+              grid[piece.y + r][piece.x + c] = piece.c;
+            }
+          }
+        }
+        // Clear lines
+        let cleared = 0;
+        grid = grid.filter(row => {
+          if (row.every(cell => cell !== null)) {
+            cleared++;
+            return false;
+          }
+          return true;
+        });
+        while (grid.length < ROWS) grid.unshift(Array(COLS).fill(null));
+        if (cleared > 0) {
+          lines += cleared;
+          score += cleared * 100;
+          scoreEl.innerText = score;
+          linesEl.innerText = lines;
+        }
+        spawn();
+      }
+    }
+
+    window.addEventListener('keydown', e => {
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) e.preventDefault();
+      if (!piece) return;
+      if (e.key === 'ArrowLeft' && !collide(piece.s, piece.x - 1, piece.y)) piece.x--;
+      if (e.key === 'ArrowRight' && !collide(piece.s, piece.x + 1, piece.y)) piece.x++;
+      if (e.key === 'ArrowDown') drop();
+      if (e.key === 'ArrowUp') {
+        let r = rotate(piece.s);
+        if (!collide(r, piece.x, piece.y)) piece.s = r;
+      }
+      if (e.key === ' ') {
+        while (!collide(piece.s, piece.x, piece.y + 1)) piece.y++;
+        drop();
+      }
+    });
+
+    function draw() {
+      ctx.fillStyle = '#050811';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          if (grid[r][c]) {
+            ctx.fillStyle = grid[r][c];
+            ctx.fillRect(c * BLOCK + 1, r * BLOCK + 1, BLOCK - 2, BLOCK - 2);
+          }
+        }
+      }
+
+      if (piece) {
+        ctx.fillStyle = piece.c;
+        for (let r = 0; r < piece.s.length; r++) {
+          for (let c = 0; c < piece.s[r].length; c++) {
+            if (piece.s[r][c]) {
+              ctx.fillRect((piece.x + c) * BLOCK + 1, (piece.y + r) * BLOCK + 1, BLOCK - 2, BLOCK - 2);
+            }
+          }
+        }
+      }
+    }
+
+    spawn();
+    setInterval(drop, 500);
+    setInterval(draw, 16);
+  </script>
+</body>
+</html>

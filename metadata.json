@@ -1,0 +1,6 @@
+{
+  "name": "UnblockHub - HTML5 Offline Web Portal",
+  "description": "A fast, lightweight, and fully offline unblocked website featuring classic arcade games, tab cloaking, panic mode, productivity tools, and exportable standalone HTML, JS, and CSS files.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

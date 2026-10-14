@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Space Defense</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    body {
+      background: #090d16;
+      color: #f8fafc;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    .hud {
+      display: flex;
+      justify-content: space-between;
+      width: 420px;
+      margin-bottom: 12px;
+      font-family: monospace;
+      font-size: 15px;
+    }
+    .hud span { color: #f43f5e; font-weight: bold; }
+    canvas {
+      background: #050811;
+      border: 2px solid #1e293b;
+      border-radius: 8px;
+    }
+    .hint {
+      margin-top: 12px;
+      font-size: 13px;
+      color: #64748b;
+    }
+  </style>
+</head>
+<body>
+  <div class="hud">
+    <div>SCORE: <span id="score">0</span></div>
+    <div>LIVES: <span id="lives">3</span></div>
+  </div>
+  <canvas id="c" width="420" height="460"></canvas>
+  <div class="hint">Left/Right Arrows to Move · Spacebar to Fire Laser</div>
+
+  <script>
+    const canvas = document.getElementById('c');
+    const ctx = canvas.getContext('2d');
+    const scoreEl = document.getElementById('score');
+    const livesEl = document.getElementById('lives');
+
+    let pX = 200, pW = 30, pH = 12;
+    let bullets = [];
+    let invaders = [];
+    let invSpeed = 1;
+    let invDir = 1;
+    let score = 0, lives = 3;
+    let keys = {};
+
+    function initInvaders() {
+      invaders = [];
+      for (let r = 0; r < 4; r++) {
+        for (let c = 0; c < 8; c++) {
+          invaders.push({
+            x: 40 + c * 42,
+            y: 40 + r * 28,
+            w: 24,
+            h: 16,
+            alive: true,
+            color: ['#f43f5e', '#fb7185', '#38bdf8', '#818cf8'][r]
+          });
+        }
+      }
+    }
+
+    window.addEventListener('keydown', e => {
+      keys[e.key] = true;
+      if (e.key === ' ') {
+        e.preventDefault();
+        if (bullets.length < 3) {
+          bullets.push({ x: pX + pW / 2 - 2, y: canvas.height - 35, w: 4, h: 10 });
+        }
+      }
+    });
+    window.addEventListener('keyup', e => { keys[e.key] = false; });
+
+    function loop() {
+      // Player move
+      if (keys['ArrowLeft'] || keys['a']) pX = Math.max(0, pX - 4);
+      if (keys['ArrowRight'] || keys['d']) pX = Math.min(canvas.width - pW, pX + 4);
+
+      // Bullets
+      for (let i = bullets.length - 1; i >= 0; i--) {
+        bullets[i].y -= 6;
+        if (bullets[i].y < 0) bullets.splice(i, 1);
+      }
+
+      // Move invaders
+      let shiftDown = false;
+      invaders.forEach(inv => {
+        if (!inv.alive) return;
+        if ((inv.x + inv.w >= canvas.width && invDir > 0) || (inv.x <= 0 && invDir < 0)) {
+          shiftDown = true;
+        }
+      });
+
+      if (shiftDown) {
+        invDir = -invDir;
+        invaders.forEach(inv => { inv.y += 12; });
+      } else {
+        invaders.forEach(inv => { inv.x += invSpeed * invDir; });
+      }
+
+      // Collisions
+      bullets.forEach((b, bIdx) => {
+        invaders.forEach(inv => {
+          if (inv.alive && b.x >= inv.x && b.x <= inv.x + inv.w && b.y >= inv.y && b.y <= inv.y + inv.h) {
+            inv.alive = false;
+            bullets.splice(bIdx, 1);
+            score += 25;
+            scoreEl.innerText = score;
+          }
+        });
+      });
+
+      // Check win or floor hit
+      let aliveCount = 0;
+      invaders.forEach(inv => {
+        if (inv.alive) {
+          aliveCount++;
+          if (inv.y + inv.h >= canvas.height - 40) {
+            lives--;
+            livesEl.innerText = lives;
+            initInvaders();
+          }
+        }
+      });
+      if (aliveCount === 0) {
+        initInvaders();
+        invSpeed += 0.3;
+      }
+
+      // Render
+      ctx.fillStyle = '#050811';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Player
+      ctx.fillStyle = '#38bdf8';
+      ctx.fillRect(pX, canvas.height - 30, pW, pH);
+      ctx.fillRect(pX + 10, canvas.height - 36, 10, 6);
+
+      // Bullets
+      ctx.fillStyle = '#facc15';
+      bullets.forEach(b => ctx.fillRect(b.x, b.y, b.w, b.h));
+
+      // Invaders
+      invaders.forEach(inv => {
+        if (inv.alive) {
+          ctx.fillStyle = inv.color;
+          ctx.beginPath();
+          ctx.roundRect(inv.x, inv.y, inv.w, inv.h, 3);
+          ctx.fill();
+        }
+      });
+
+      requestAnimationFrame(loop);
+    }
+
+    initInvaders();
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>

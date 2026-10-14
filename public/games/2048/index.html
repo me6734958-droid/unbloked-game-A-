@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>2048</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    body {
+      background: #090d16;
+      color: #f8fafc;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    .hud {
+      display: flex;
+      justify-content: space-between;
+      width: 340px;
+      margin-bottom: 14px;
+      font-family: monospace;
+      font-size: 15px;
+    }
+    .hud span { color: #f59e0b; font-weight: bold; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      background: #131b2e;
+      padding: 12px;
+      border-radius: 12px;
+      width: 340px;
+      height: 340px;
+      border: 1px solid #1e293b;
+    }
+    .cell {
+      background: #1e293b;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: bold;
+      font-family: monospace;
+      color: transparent;
+      transition: all 0.1s ease;
+    }
+    .cell[data-val="2"] { background: #334155; color: #fff; }
+    .cell[data-val="4"] { background: #475569; color: #fff; }
+    .cell[data-val="8"] { background: #d97706; color: #fff; }
+    .cell[data-val="16"] { background: #ea580c; color: #fff; }
+    .cell[data-val="32"] { background: #f97316; color: #fff; }
+    .cell[data-val="64"] { background: #ef4444; color: #fff; }
+    .cell[data-val="128"] { background: #10b981; color: #fff; font-size: 20px; }
+    .cell[data-val="256"] { background: #059669; color: #fff; font-size: 20px; }
+    .cell[data-val="512"] { background: #0d9488; color: #fff; font-size: 20px; }
+    .cell[data-val="1024"] { background: #0284c7; color: #fff; font-size: 18px; }
+    .cell[data-val="2048"] { background: #eab308; color: #000; font-size: 18px; box-shadow: 0 0 15px #facc15; }
+    .hint {
+      margin-top: 14px;
+      font-size: 13px;
+      color: #64748b;
+    }
+  </style>
+</head>
+<body>
+  <div class="hud">
+    <div>SCORE: <span id="score">0</span></div>
+    <div>BEST: <span id="best">0</span></div>
+  </div>
+  <div class="grid" id="grid"></div>
+  <div class="hint">Use Arrow Keys or Swipe to Merge Tiles</div>
+
+  <script>
+    const gridEl = document.getElementById('grid');
+    const scoreEl = document.getElementById('score');
+    const bestEl = document.getElementById('best');
+    const SIZE = 4;
+    let board = [];
+    let score = 0;
+    let best = parseInt(localStorage.getItem('unblock_2048_hi') || '0', 10);
+    bestEl.innerText = best;
+
+    function init() {
+      board = Array(SIZE).fill(0).map(() => Array(SIZE).fill(0));
+      score = 0;
+      scoreEl.innerText = '0';
+      spawn();
+      spawn();
+      render();
+    }
+
+    function spawn() {
+      let empty = [];
+      for (let r = 0; r < SIZE; r++) {
+        for (let c = 0; c < SIZE; c++) {
+          if (board[r][c] === 0) empty.push({r, c});
+        }
+      }
+      if (empty.length === 0) return;
+      let spot = empty[Math.floor(Math.random() * empty.length)];
+      board[spot.r][spot.c] = Math.random() < 0.9 ? 2 : 4;
+    }
+
+    function render() {
+      gridEl.innerHTML = '';
+      for (let r = 0; r < SIZE; r++) {
+        for (let c = 0; c < SIZE; c++) {
+          let cell = document.createElement('div');
+          cell.className = 'cell';
+          let val = board[r][c];
+          if (val > 0) {
+            cell.setAttribute('data-val', val);
+            cell.innerText = val;
+          }
+          gridEl.appendChild(cell);
+        }
+      }
+    }
+
+    function slide(row) {
+      let arr = row.filter(v => v !== 0);
+      for (let i = 0; i < arr.length - 1; i++) {
+        if (arr[i] === arr[i + 1]) {
+          arr[i] *= 2;
+          score += arr[i];
+          arr[i + 1] = 0;
+        }
+      }
+      arr = arr.filter(v => v !== 0);
+      while (arr.length < SIZE) arr.push(0);
+      return arr;
+    }
+
+    function move(dir) {
+      let changed = false;
+      let prevBoard = JSON.stringify(board);
+
+      if (dir === 'left' || dir === 'right') {
+        for (let r = 0; r < SIZE; r++) {
+          let row = dir === 'left' ? [...board[r]] : [...board[r]].reverse();
+          let newRow = slide(row);
+          board[r] = dir === 'left' ? newRow : newRow.reverse();
+        }
+      } else {
+        for (let c = 0; c < SIZE; c++) {
+          let col = [];
+          for (let r = 0; r < SIZE; r++) col.push(board[r][c]);
+          let prepared = dir === 'up' ? col : col.reverse();
+          let newCol = slide(prepared);
+          let finalCol = dir === 'up' ? newCol : newCol.reverse();
+          for (let r = 0; r < SIZE; r++) board[r][c] = finalCol[r];
+        }
+      }
+
+      if (JSON.stringify(board) !== prevBoard) {
+        spawn();
+        scoreEl.innerText = score;
+        if (score > best) {
+          best = score;
+          bestEl.innerText = best;
+          localStorage.setItem('unblock_2048_hi', best);
+        }
+        render();
+      }
+    }
+
+    window.addEventListener('keydown', e => {
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) e.preventDefault();
+      if (e.key === 'ArrowLeft' || e.key === 'a') move('left');
+      if (e.key === 'ArrowRight' || e.key === 'd') move('right');
+      if (e.key === 'ArrowUp' || e.key === 'w') move('up');
+      if (e.key === 'ArrowDown' || e.key === 's') move('down');
+    });
+
+    init();
+  </script>
+</body>
+</html>

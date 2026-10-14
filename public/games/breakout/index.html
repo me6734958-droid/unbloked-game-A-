@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Brick Breaker</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    body {
+      background: #090d16;
+      color: #f8fafc;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    .hud {
+      display: flex;
+      justify-content: space-between;
+      width: 400px;
+      margin-bottom: 12px;
+      font-family: monospace;
+      font-size: 15px;
+    }
+    .hud span { color: #38bdf8; font-weight: bold; }
+    canvas {
+      background: #050811;
+      border: 2px solid #1e293b;
+      border-radius: 8px;
+      cursor: none;
+    }
+    .hint {
+      margin-top: 12px;
+      font-size: 13px;
+      color: #64748b;
+    }
+  </style>
+</head>
+<body>
+  <div class="hud">
+    <div>SCORE: <span id="score">0</span></div>
+    <div>LIVES: <span id="lives">3</span></div>
+  </div>
+  <canvas id="c" width="400" height="450"></canvas>
+  <div class="hint">Move Mouse or Left/Right Arrows to Slide Paddle</div>
+
+  <script>
+    const canvas = document.getElementById('c');
+    const ctx = canvas.getContext('2d');
+    const scoreEl = document.getElementById('score');
+    const livesEl = document.getElementById('lives');
+
+    let paddleW = 80, paddleH = 12, paddleX = 160;
+    let ballX = 200, ballY = 320, ballDX = 3.5, ballDY = -3.5, ballR = 6;
+    let score = 0, lives = 3;
+    let bricks = [];
+
+    function initBricks() {
+      bricks = [];
+      const colors = ['#ef4444', '#f97316', '#eab308', '#10b981', '#3b82f6'];
+      for (let r = 0; r < 5; r++) {
+        for (let c = 0; c < 8; c++) {
+          bricks.push({
+            x: 12 + c * 47,
+            y: 40 + r * 20,
+            w: 42,
+            h: 14,
+            intact: true,
+            color: colors[r]
+          });
+        }
+      }
+    }
+
+    function resetBall() {
+      ballX = paddleX + paddleW / 2;
+      ballY = canvas.height - 40;
+      ballDX = (Math.random() > 0.5 ? 1 : -1) * 3.5;
+      ballDY = -3.5;
+    }
+
+    canvas.addEventListener('mousemove', e => {
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      paddleX = Math.max(0, Math.min(canvas.width - paddleW, mouseX - paddleW / 2));
+    });
+
+    window.addEventListener('keydown', e => {
+      if (e.key === 'ArrowLeft') paddleX = Math.max(0, paddleX - 25);
+      if (e.key === 'ArrowRight') paddleX = Math.min(canvas.width - paddleW, paddleX + 25);
+    });
+
+    function loop() {
+      ballX += ballDX;
+      ballY += ballDY;
+
+      // Wall bounce
+      if (ballX + ballR > canvas.width || ballX - ballR < 0) ballDX = -ballDX;
+      if (ballY - ballR < 0) ballDY = -ballDY;
+
+      // Paddle bounce
+      const pY = canvas.height - 25;
+      if (ballY + ballR >= pY && ballY - ballR <= pY + paddleH && ballX >= paddleX && ballX <= paddleX + paddleW) {
+        let hit = (ballX - (paddleX + paddleW / 2)) / (paddleW / 2);
+        ballDX = hit * 4.5;
+        ballDY = -Math.abs(ballDY);
+      }
+
+      // Lose life
+      if (ballY > canvas.height) {
+        lives--;
+        livesEl.innerText = lives;
+        if (lives <= 0) {
+          lives = 3;
+          score = 0;
+          scoreEl.innerText = '0';
+          livesEl.innerText = '3';
+          initBricks();
+        }
+        resetBall();
+      }
+
+      // Brick hit
+      for (let b of bricks) {
+        if (b.intact && ballX >= b.x && ballX <= b.x + b.w && ballY >= b.y && ballY <= b.y + b.h) {
+          b.intact = false;
+          ballDY = -ballDY;
+          score += 20;
+          scoreEl.innerText = score;
+          break;
+        }
+      }
+
+      // Render
+      ctx.fillStyle = '#050811';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      bricks.forEach(b => {
+        if (b.intact) {
+          ctx.fillStyle = b.color;
+          ctx.beginPath();
+          ctx.roundRect(b.x, b.y, b.w, b.h, 3);
+          ctx.fill();
+        }
+      });
+
+      // Paddle
+      ctx.fillStyle = '#38bdf8';
+      ctx.beginPath();
+      ctx.roundRect(paddleX, pY, paddleW, paddleH, 4);
+      ctx.fill();
+
+      // Ball
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(ballX, ballY, ballR, 0, Math.PI * 2);
+      ctx.fill();
+
+      requestAnimationFrame(loop);
+    }
+
+    initBricks();
+    resetBall();
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>

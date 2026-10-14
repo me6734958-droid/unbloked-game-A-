@@ -1,0 +1,82 @@
+[
+  {
+    "id": "snake",
+    "title": "Retro Snake",
+    "category": "Arcade",
+    "description": "Classic slither arcade. Collect red apples and golden bonuses without hitting the walls or your own tail.",
+    "iframeUrl": "/games/snake/index.html",
+    "icon": "Gamepad2",
+    "tag": "Classic",
+    "rating": 4.9
+  },
+  {
+    "id": "2048",
+    "title": "2048 Puzzle",
+    "category": "Puzzle",
+    "description": "Join matching numbers and slide tiles across the board until you reach the legendary 2048 tile.",
+    "iframeUrl": "/games/2048/index.html",
+    "icon": "Layers",
+    "tag": "Strategy",
+    "rating": 4.8
+  },
+  {
+    "id": "tetris",
+    "title": "Tetro Blocks",
+    "category": "Puzzle",
+    "description": "Arrange falling geometric tetromino shapes, rotate blocks, and clear rows before the stack reaches the top.",
+    "iframeUrl": "/games/tetris/index.html",
+    "icon": "Grid",
+    "tag": "Retro",
+    "rating": 4.9
+  },
+  {
+    "id": "breakout",
+    "title": "Brick Breaker",
+    "category": "Action",
+    "description": "Deflect the high-speed ball with your paddle to smash through multi-colored brick formations.",
+    "iframeUrl": "/games/breakout/index.html",
+    "icon": "Target",
+    "tag": "Arcade",
+    "rating": 4.7
+  },
+  {
+    "id": "flappy",
+    "title": "Sky Hopper",
+    "category": "Arcade",
+    "description": "Tap or press space to flap your wings and navigate through tricky pipe obstacles.",
+    "iframeUrl": "/games/flappy/index.html",
+    "icon": "Zap",
+    "tag": "Agility",
+    "rating": 4.6
+  },
+  {
+    "id": "pong",
+    "title": "Retro Pong",
+    "category": "Sports",
+    "description": "The grandfather of video games. Play paddle tennis against an adaptable AI bot.",
+    "iframeUrl": "/games/pong/index.html",
+    "icon": "Trophy",
+    "tag": "1v1 Bot",
+    "rating": 4.7
+  },
+  {
+    "id": "space-invaders",
+    "title": "Space Defense",
+    "category": "Shooter",
+    "description": "Pilot your starship and fire laser blasters at descending waves of alien invaders.",
+    "iframeUrl": "/games/space-invaders/index.html",
+    "icon": "Rocket",
+    "tag": "Action",
+    "rating": 4.8
+  },
+  {
+    "id": "doodle-jump",
+    "title": "Doodle Jump",
+    "category": "Action",
+    "description": "Bounce continuously up bouncy green platforms, collecting springs and avoiding falls.",
+    "iframeUrl": "/games/doodle-jump/index.html",
+    "icon": "ArrowUpCircle",
+    "tag": "Endless",
+    "rating": 4.8
+  }
+]
